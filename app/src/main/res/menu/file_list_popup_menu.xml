@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/action_remove" android:title="删除"></item>
-    <item android:id="@+id/action_rename" android:title="重命名"></item>
-    <item android:id="@+id/action_copy" android:title="复制"></item>
+    <item
+        android:id="@+id/action_remove"
+        android:icon="@drawable/ic_close_black_24dp"
+        android:title="删除"></item>
+    <item
+        android:id="@+id/action_rename"
+        android:icon="@drawable/ic_mode_edit_black_24dp"
+        android:title="重命名"></item>
+    <item
+        android:id="@+id/action_copy"
+        android:icon="@drawable/ic_content_copy_black_24dp"
+        android:title="复制"></item>
 
 </menu>

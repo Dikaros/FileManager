@@ -1,5 +1,6 @@
 package com.dikaros.filemanager;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -67,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
         loadFile();
         initAdapter();
         initViews();
+
+        progressDialog = new ProgressDialog(this);
     }
 
     /**
@@ -107,19 +110,41 @@ public class MainActivity extends AppCompatActivity {
                         intent.setDataAndType(data, type);
                         startActivity(intent);
 
-                    }catch (Exception e){
-                        Toast.makeText(MainActivity.this,"无法打开文件",Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(MainActivity.this, "无法打开文件", Toast.LENGTH_SHORT).show();
                     }
 
                 }
             }
         });
+
+        fileAdapter.setOnCopyFileListener(new FileAdapter.OnCopyFileListener() {
+            @Override
+            public void onCopy(File file) {
+                copyFile = file;
+                pasteMode = false;
+                actionMenu.findItem(R.id.action_paste).setVisible(true);
+                setTitle("复制文件"+copyFile.getName());
+            }
+        });
     }
+
+    //粘贴模式
+    boolean pasteMode = false;
+    //需要复制的文件
+    File copyFile;
+    //菜单
+    Menu actionMenu;
+
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
+        actionMenu = menu;
+        menu.findItem(R.id.action_paste).setVisible(pasteMode);
 
         SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -176,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
      * 初始化adapter
      */
     private void initAdapter() {
-        fileAdapter = new FileAdapter(this, files);
+        fileAdapter = new FileAdapter(this, files, findViewById(R.id.rlayout_main));
     }
 
     /**
@@ -184,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void loadFile() {
         files = new ArrayList<>();
-        File sdPath = Environment.getRootDirectory();
+        File sdPath = Environment.getExternalStorageDirectory();
         //设置当前路径以及根路径均为sd卡的根目录
         currnetPath = sdPath.getAbsolutePath();
         rootPath = currnetPath;
@@ -217,9 +242,14 @@ public class MainActivity extends AppCompatActivity {
                 fileAdapter.setSortWay(FileSortFactory.SORT_BY_FOLDER_AND_NAME);
                 fileAdapter.notifyDataSetChanged();
                 break;
+            case R.id.action_paste:
+                break;
         }
         return true;
     }
+
+    //复制进度
+    ProgressDialog progressDialog;
 
 
     /**

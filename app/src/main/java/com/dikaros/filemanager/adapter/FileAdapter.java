@@ -2,6 +2,7 @@ package com.dikaros.filemanager.adapter;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 import com.dikaros.filemanager.R;
 import com.dikaros.filemanager.util.FileSortFactory;
 import com.dikaros.filemanager.util.FileUtils;
+import com.dikaros.filemanager.view.RenameFileDialog;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,7 +35,7 @@ public class FileAdapter extends BaseAdapter {
     Context context;
     ArrayList<File> files;
 
-    public void addToFiles(File file){
+    public void addToFiles(File file) {
         files.add(file);
     }
 
@@ -45,15 +47,18 @@ public class FileAdapter extends BaseAdapter {
         this.files = files;
     }
 
+    View anchor;
+
     /**
      * 构造方法
      *
      * @param context 上下文
      * @param files   文件集合
      */
-    public FileAdapter(Context context, ArrayList<File> files) {
+    public FileAdapter(Context context, ArrayList<File> files, View anchor) {
         this.context = context;
         this.files = files;
+        this.anchor = anchor;
         fileItemListener = new FileListItemListender();
         sort();
     }
@@ -158,7 +163,6 @@ public class FileAdapter extends BaseAdapter {
     private void sort() {
 
 
-
         Collections.sort(this.files, FileSortFactory.getWebFileQueryMethod(sortWay));
     }
 
@@ -176,12 +180,28 @@ public class FileAdapter extends BaseAdapter {
 
 
     /**
+     * 复制文件的监听器
+     */
+    public interface OnCopyFileListener{
+        public void onCopy(File file);
+    }
+
+    OnCopyFileListener onCopyFileListener;
+
+    public void setOnCopyFileListener(OnCopyFileListener onCopyFileListener) {
+        this.onCopyFileListener = onCopyFileListener;
+    }
+
+    /**
      * ibMore被点击的监听器
      * 点击的时候图标旋转并弹出menu,根据点击的view获取其绑定的position,之后再在file集合中操作数据
      */
-    class FileListItemListender implements View.OnClickListener, PopupMenu.OnMenuItemClickListener {
+    public class FileListItemListender implements View.OnClickListener, PopupMenu.OnMenuItemClickListener {
+
+
 
         Integer position;
+
 
         @Override
         public void onClick(final View v) {
@@ -242,20 +262,16 @@ public class FileAdapter extends BaseAdapter {
          */
         private void doRemove() {
             final File file = files.get(position);
-            if (file.isFile()){
-                FileUtils.judgeAlertDialog(context, "提醒", "你确认删除" + file.getName() + "吗?", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        file.delete();
-                        showToast("删除成功" + position);
-                        notifyDataSetChanged();
-                    }
-                }, null);
+            FileUtils.judgeAlertDialog(context, "提醒", "你确认删除" + file.getName() + "吗(不可逆)?", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    FileUtils.deleteDir(file);
+                    files.remove(file);
+                    notifyDataSetChanged();
+                    showSnack(file.getName() + " 删除成功");
 
-
-            }else {
-                showToast("不能删除文件夹" + position);
-            }
+                }
+            }, null);
 
         }
 
@@ -268,22 +284,52 @@ public class FileAdapter extends BaseAdapter {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
         }
 
+        private void showSnack(String message) {
+            Snackbar.make(anchor, message, Snackbar.LENGTH_SHORT).show();
+
+        }
+
         /**
          * 复制
          */
         private void doCopy() {
-            showToast("复制" + position);
+//            showToast("复制" + position);
+            if (onCopyFileListener!=null) {
+                onCopyFileListener.onCopy(files.get(position));
+            }
         }
+
 
         /**
          * 重命名
          */
         private void doRename() {
             showToast("重命名" + position);
-//            String newName = null;
-//            File file = files.get(position);
-//
-//            file.renameTo(new File(file.getAbsolutePath().replace(file.getName(),newName)));
+            RenameFileDialog dialog = new RenameFileDialog(context, files, position);
+            dialog.setOnFileRenameListener(new RenameFileDialog.OnFileRenameListener() {
+                @Override
+                public void onFileRenamed(boolean success) {
+                    String message = null;
+                    if (files.get(position).isFile()) {
+                        message = "文件";
+                    } else {
+                        message = "文件夹";
+                    }
+                    if (success) {
+
+                        message += "重命名成功";
+                        notifyDataSetChanged();
+                    } else {
+                        message += "重命名失败";
+
+                    }
+//                    showToast(message);
+//                    Snackbar.make(LayoutInflater.from(context).inflate(R.layout.activity_main, null).findViewById(R.id.rlayout_main), message, Snackbar.LENGTH_SHORT).show();
+
+                    showSnack(message);
+                }
+            });
+            dialog.show();
 
         }
 

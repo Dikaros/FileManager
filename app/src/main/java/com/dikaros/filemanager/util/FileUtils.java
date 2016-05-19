@@ -1,8 +1,10 @@
 package com.dikaros.filemanager.util;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 
 
 import com.dikaros.filemanager.Config;
@@ -20,6 +22,7 @@ public class FileUtils {
 
     /**
      * 文件的图片
+     *
      * @param file 文件
      * @return 图片id
      */
@@ -61,6 +64,7 @@ public class FileUtils {
         }
 
     }
+
     public static String generateSize(File file) {
         if (file.isFile()) {
             long result = file.length();
@@ -83,6 +87,7 @@ public class FileUtils {
 
     /**
      * 按照yyyy-MM-dd的格式格式化file的时间
+     *
      * @param file
      * @return
      */
@@ -95,12 +100,12 @@ public class FileUtils {
 
     /**
      * 获取file的后缀名
+     *
      * @param name
      * @return
      */
     public static String getTailName(String name) {
-        String type = null
-                ;
+        String type = null;
         if (name.contains(".")) {
             String[] splits = name.split("\\.");
             // System.out.println(splits.length);
@@ -111,6 +116,7 @@ public class FileUtils {
 
     /**
      * 判断对话框
+     *
      * @param context
      * @param title
      * @param message
@@ -121,14 +127,14 @@ public class FileUtils {
     public static AlertDialog judgeAlertDialog(Context context, String title,
                                                String message, DialogInterface.OnClickListener okListener,
                                                DialogInterface.OnClickListener cancleListener) {
-        AlertDialog  aDialog= new AlertDialog.Builder(context).setTitle(title).setMessage(message)
+        AlertDialog aDialog = new AlertDialog.Builder(context).setTitle(title).setMessage(message)
                 .setNegativeButton("确定", okListener)
                 .setPositiveButton("取消", cancleListener).show();
         return aDialog;
     }
 
     //设置意图的类型
-    public static String getIntentByFile(File file){
+    public static String getIntentByFile(File file) {
         String type = getTailName(file.getName());
         if (file.isFile()) {
             if (type == null) {
@@ -154,7 +160,7 @@ public class FileUtils {
                 } else if (Config.TYPE_VIDEO.contains(type)) {
                     return "video/*";
                 } else if (Config.TYPE_WORD.contains(type)) {
-                    return  "application/msword";
+                    return "application/msword";
                 } else if (Config.TYPE_ZIP.contains(type)) {
                     return "application/x-zip-compressed";
                 } else {
@@ -175,7 +181,7 @@ public class FileUtils {
         Process process = null;
         DataOutputStream os = null;
         try {
-            String cmd="chmod 777 " + pkgCodePath;
+            String cmd = "chmod 777 " + pkgCodePath;
             process = Runtime.getRuntime().exec("su"); //切换到root帐号
             os = new DataOutputStream(process.getOutputStream());
             os.writeBytes(cmd + "\n");
@@ -194,6 +200,44 @@ public class FileUtils {
             }
         }
         return true;
+    }
+
+    public static void copyFile(File oldFile,File newFile){
+
+    }
+
+
+
+    /**
+     * 删除文件或文件夹
+     * @param file
+     */
+    public static void deleteDir(File file) {
+        if (file.isFile()) {
+            file.delete();
+        } else {
+            File[] files = file.listFiles();
+            for (File f : files) {
+                deleteDir(f);
+            }
+        }
+        file.delete();
+    }
+
+    public final static String ACTION_COPY_FILE = "com.dikaros.filemanager.copy";
+
+    /**
+     * 接收copy的信息
+     */
+    class FileCopyBrocatstReceiver extends BroadcastReceiver{
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()){
+                case ACTION_COPY_FILE:
+                break;
+            }
+        }
     }
 
 

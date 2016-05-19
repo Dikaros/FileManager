@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="300dp"
     android:layout_height="wrap_content"
-    android:background="#ffff"
+    android:background="@color/white"
     android:layout_gravity="center"
     android:orientation="vertical" >
 
@@ -11,9 +11,9 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:paddingTop="10dp"
-        android:text="新建文件夹"
+        android:text="重命名"
         android:textSize="18sp"
-        android:textColor="#f000" />
+        android:textColor="@color/black" />
 
     <View
         android:layout_width="fill_parent"
@@ -27,23 +27,27 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:layout_marginTop="20dp"
         android:orientation="horizontal" >
 
-        <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_margin="10dp"
-            android:background="@drawable/folder" />
 
         <requestFocus />
         <EditText
-            android:id="@+id/et_dlg_new_forder_name"
+            android:id="@+id/et_dlg_rename"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_marginRight="10dp"
-            android:hint="新建文件夹"
-            android:textSize="15sp" />
+            android:hint="请输入新文件名"
+            android:layout_weight="1"
+            android:textSize="12sp" />
+        <TextView 
+            android:id="@+id/tv_dlg_file_type"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:gravity="center"
+            android:text=".torrent"
+            
+            
+            />
         
     </LinearLayout>
 
@@ -58,7 +62,7 @@
         android:paddingTop="8dp" >
 
         <Button
-            android:id="@+id/btn_dlg_new_folder_cancle"
+            android:id="@+id/btn_dlg_rename_cancle"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginRight="10dp"
@@ -68,13 +72,13 @@
             android:textSize="16sp" />
 
         <Button
-            android:id="@+id/btn_dlg_new_folder_creat"
+            android:id="@+id/btn_dlg_rename_confirm"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@color/colorPrimary"
-            android:text="创建"
-            android:textColor="#ffff"
+            android:text="确定"
+            android:textColor="@color/white"
             android:textSize="16sp" />
     </LinearLayout>
 
