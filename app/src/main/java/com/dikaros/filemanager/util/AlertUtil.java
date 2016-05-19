@@ -3,6 +3,8 @@ package com.dikaros.filemanager.util;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.support.design.widget.Snackbar;
+import android.view.View;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
@@ -60,5 +62,9 @@ public class AlertUtil {
         return aDialog;
     }
 
+    public static void showSnack(View anchor, String message) {
+        Snackbar.make(anchor, message, Snackbar.LENGTH_SHORT).show();
+
+    }
 
 }

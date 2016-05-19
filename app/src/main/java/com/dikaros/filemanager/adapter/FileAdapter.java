@@ -47,6 +47,8 @@ public class FileAdapter extends BaseAdapter {
         this.files = files;
     }
 
+
+
     View anchor;
 
     /**
@@ -225,6 +227,12 @@ public class FileAdapter extends BaseAdapter {
                 }
             });
             popupMenu.setOnMenuItemClickListener(this);
+            if (files.get(position).isDirectory()){
+                popupMenu.getMenu().findItem(R.id.action_copy).setVisible(false);
+            }else {
+                popupMenu.getMenu().findItem(R.id.action_copy).setVisible(true);
+
+            }
             RotateAnimation rotateAnimation = new RotateAnimation(0, 90, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
             rotateAnimation.setDuration(300);
             rotateAnimation.setFillAfter(true);

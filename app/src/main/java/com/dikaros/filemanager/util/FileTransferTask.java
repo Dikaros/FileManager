@@ -32,14 +32,14 @@ public class FileTransferTask extends AsyncTask<String,Integer,Boolean> {
     @Override
     protected void onCancelled() {
         if (onFileTransferListener!=null){
-            onFileTransferListener.transferFinished(false);
+            onFileTransferListener.transferFinished(newFile,false);
         }
     }
 
     @Override
     protected void onPostExecute(Boolean aBoolean) {
         if (onFileTransferListener!=null){
-            onFileTransferListener.transferFinished(aBoolean);
+            onFileTransferListener.transferFinished(newFile,aBoolean);
         }
     }
 
@@ -58,7 +58,7 @@ public class FileTransferTask extends AsyncTask<String,Integer,Boolean> {
     }
 
     public interface OnFileTransferListener{
-        public void transferFinished(boolean success);
+        public void transferFinished(File file,boolean success);
         public void beforeTransfer();
         public void onProgress(Integer...progress);
     }
@@ -93,6 +93,13 @@ public class FileTransferTask extends AsyncTask<String,Integer,Boolean> {
         }
 
         return false;
+    }
+
+    /**
+     * 执行
+     */
+    public void execute(){
+        this.execute(new String[]{});
     }
 
 }

@@ -1,6 +1,7 @@
 package com.dikaros.filemanager;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,7 +22,9 @@ import android.widget.Toast;
 
 
 import com.dikaros.filemanager.adapter.FileAdapter;
+import com.dikaros.filemanager.util.AlertUtil;
 import com.dikaros.filemanager.util.FileSortFactory;
+import com.dikaros.filemanager.util.FileTransferTask;
 import com.dikaros.filemanager.util.FileUtils;
 import com.dikaros.filemanager.view.NewFolderDialog;
 
@@ -124,7 +127,8 @@ public class MainActivity extends AppCompatActivity {
                 copyFile = file;
                 pasteMode = false;
                 actionMenu.findItem(R.id.action_paste).setVisible(true);
-                setTitle("复制文件"+copyFile.getName());
+                setTitle("复制文件");
+
             }
         });
     }
@@ -243,13 +247,55 @@ public class MainActivity extends AppCompatActivity {
                 fileAdapter.notifyDataSetChanged();
                 break;
             case R.id.action_paste:
+                AlertUtil.judgeAlertDialog(this, "复制", "是否要复制文件到当前目录？", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final FileTransferTask task = new FileTransferTask(copyFile,new File(currnetPath+"/"+copyFile.getName()));
+                        task.setOnFileTransferListener(new FileTransferTask.OnFileTransferListener() {
+                            @Override
+                            public void transferFinished(File file,boolean success) {
+                                progressDialog.dismiss();
+
+                                AlertUtil.showSnack(findViewById(R.id.rlayout_main),success?"复制成功":"复制失败");
+                                copyFile = null;
+                                pasteMode = true;
+                                actionMenu.findItem(R.id.action_paste).setVisible(false);
+                                setTitle("浏览文件");
+                                if (success){
+                                    fileAdapter.getFiles().add(file);
+                                }
+                                fileAdapter.notifyDataSetChanged();
+
+                            }
+
+                            @Override
+                            public void beforeTransfer() {
+                                progressDialog.setTitle("传输文件");
+                                progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                                progressDialog.setMax(100);
+                                progressDialog.setCancelable(false);
+                                progressDialog.show();
+                            }
+
+                            @Override
+                            public void onProgress(Integer... progress) {
+                                progressDialog.setMessage("传输中...");
+                                progressDialog.setProgress(progress[0]);
+                            }
+                        });
+                        //执行
+                        task.execute();
+                    }
+                },null);
                 break;
+
         }
         return true;
     }
 
     //复制进度
     ProgressDialog progressDialog;
+
 
 
     /**
