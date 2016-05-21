@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
@@ -89,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 //当前选中的文件
-                File file = files.get(position);
+                File file = !searchMode?files.get(position):searchResult.get(position);
                 //如果是文件夹,点击后进入文件夹
                 if (file.isDirectory()) {
                     currnetPath = file.getAbsolutePath();
@@ -140,8 +142,48 @@ public class MainActivity extends AppCompatActivity {
     //菜单
     Menu actionMenu;
 
+    public static final int QUERY_START = 0x1;
+    public static final int QUERY_ON_FILE = 0x2;
+    public static final int QUERY_FINISH = 0x3;
+
+    SearchView searchView;
 
 
+    boolean searchMode = false;
+    ArrayList<File> searchResult = new ArrayList<>();
+
+
+    //监听查找事件
+     Handler handler = new Handler(){
+        int count = 0;
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case QUERY_START:
+//                    tvPath.setVisibility(View.GONE);
+                    tvPath.setText("正在搜索...");
+                    fileAdapter.setFiles(searchResult);
+                    fileAdapter.notifyDataSetChanged();
+                    break;
+                case QUERY_ON_FILE:
+                    count++;
+                    tvPath.setText("正在搜索,查询到了"+count+"个文件...");
+                    File file = (File) msg.obj;
+                    searchResult.add(file);
+                    if (count%10==0) {
+                        fileAdapter.notifyDataSetChanged();
+                    }
+                    break;
+                case QUERY_FINISH:
+                    tvPath.setText("搜索完成,查询到了"+count+"个文件");
+                    fileAdapter.notifyDataSetChanged();
+                    AlertUtil.showSnack(findViewById(R.id.rlayout_main),"查找完成");
+                    count = 0;
+                    break;
+            }
+        }
+    };
+    Thread thread;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -150,11 +192,47 @@ public class MainActivity extends AppCompatActivity {
         actionMenu = menu;
         menu.findItem(R.id.action_paste).setVisible(pasteMode);
 
-        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+        searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onQueryTextSubmit(String query) {
-                return false;
+            public boolean onQueryTextSubmit(final String query) {
+
+                if (query!=null&&!query.equals("")&&thread==null) {
+                    thread = new Thread() {
+                        @Override
+                        public void run() {
+                            searchMode = true;
+                            //发送开始查找
+                            handler.sendEmptyMessage(QUERY_START);
+                            File rootFile = new File(rootPath);
+                            doSearch(rootFile);
+                            //发送查找完成
+                            handler.sendEmptyMessage(QUERY_FINISH);
+                        }
+
+                        public void doSearch(File file) {
+                            if (searchMode) {
+                                if (file.isFile()) {
+                                    if (file.getName().contains(query)) {
+//                                searchAdapter.addToFiles(file);
+                                        Message message = new Message();
+                                        message.what = QUERY_ON_FILE;
+                                        message.obj = file;
+                                        handler.sendMessage(message);
+                                    }
+                                } else {
+                                    for (File f : file.listFiles()) {
+                                        doSearch(f);
+                                    }
+                                }
+                            }
+                        }
+
+                    };
+                    thread.start();
+                }
+
+                return true;
             }
 
             @Override
@@ -163,9 +241,27 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+            @Override
+            public boolean onClose() {
+
+                //关闭查询模式
+                if (thread!=null) {
+                    thread.interrupt();
+                    searchMode = false;
+                    thread = null;
+                    searchResult.clear();
+                    fileAdapter.setFiles(files);
+                    fileAdapter.notifyDataSetChanged();
+                }
+                tvPath.setText(currnetPath);
+                return true;
+            }
+        });
 
         return super.onCreateOptionsMenu(menu);
     }
+
 
     /**
      * 按下返回键
@@ -173,6 +269,8 @@ public class MainActivity extends AppCompatActivity {
      */
     @Override
     public void onBackPressed() {
+
+
         //当前路径不是根路径
         if (!rootPath.equals(currnetPath)) {
             //当前文件夹
@@ -206,6 +304,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void initAdapter() {
         fileAdapter = new FileAdapter(this, files, findViewById(R.id.rlayout_main));
+
     }
 
     /**
@@ -222,6 +321,7 @@ public class MainActivity extends AppCompatActivity {
         for (File file : tempFiles) {
             files.add(file);
         }
+
 
     }
 
@@ -250,21 +350,22 @@ public class MainActivity extends AppCompatActivity {
                 AlertUtil.judgeAlertDialog(this, "复制", "是否要复制文件到当前目录？", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        final FileTransferTask task = new FileTransferTask(copyFile,new File(currnetPath+"/"+copyFile.getName()));
+                        final FileTransferTask task = new FileTransferTask(copyFile, new File(currnetPath + "/" + copyFile.getName()));
                         task.setOnFileTransferListener(new FileTransferTask.OnFileTransferListener() {
                             @Override
-                            public void transferFinished(File file,boolean success) {
+                            public void transferFinished(File file, boolean success) {
                                 progressDialog.dismiss();
 
-                                AlertUtil.showSnack(findViewById(R.id.rlayout_main),success?"复制成功":"复制失败");
+                                AlertUtil.showSnack(findViewById(R.id.rlayout_main), success ? "复制成功" : "复制失败");
                                 copyFile = null;
                                 pasteMode = true;
                                 actionMenu.findItem(R.id.action_paste).setVisible(false);
                                 setTitle("浏览文件");
-                                if (success){
+                                if (success) {
                                     fileAdapter.getFiles().add(file);
                                 }
                                 fileAdapter.notifyDataSetChanged();
+
 
                             }
 
@@ -286,7 +387,7 @@ public class MainActivity extends AppCompatActivity {
                         //执行
                         task.execute();
                     }
-                },null);
+                }, null);
                 break;
 
         }
@@ -297,11 +398,12 @@ public class MainActivity extends AppCompatActivity {
     ProgressDialog progressDialog;
 
 
-
     /**
      * 搜索
      */
     private void doSearch() {
+
+
     }
 
     /**
